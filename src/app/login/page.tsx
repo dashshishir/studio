@@ -19,7 +19,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
-  const [isSigningIn, setIsSigningIn] = useState(true); // Start in a loading state
+  const [isSigningIn, setIsSigningIn] = useState(true);
   
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -27,7 +27,6 @@ export default function LoginPage() {
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
       await signInWithRedirect(auth, provider);
-      // signInWithRedirect will cause the page to unload, so no need to set isSigningIn to false here.
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       setIsSigningIn(false);
@@ -35,30 +34,27 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    // This effect runs once when the component mounts or auth state changes.
-    if (loading) {
-      return; // Wait for the AuthContext to be ready
-    }
+    const redirectUrl = searchParams.get('redirect') || '/';
 
     if (user) {
-      // If user is already logged in, redirect them.
-      const redirectUrl = searchParams.get('redirect') || '/';
       router.replace(redirectUrl);
       return;
     }
 
-    // If no user, check for a redirect result.
+    if (loading) {
+      return; 
+    }
+
     const checkForRedirectResult = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
-          // A result means the user has just signed in. The `onAuthStateChanged`
-          // listener in AuthContext will detect the new user, so we just redirect.
-          const redirectUrl = searchParams.get('redirect') || '/';
-          router.replace(redirectUrl);
+          // User has just signed in. The `user` object from useAuth will update shortly,
+          // and the effect will re-run, causing the redirect.
+          // We can keep the loader active.
+          return;
         } else {
-          // No redirect result, so the user is just visiting the login page.
-          // We can stop the loading indicator and show the sign-in button.
+          // No user, no redirect result. The user is just on the login page.
           setIsSigningIn(false);
         }
       } catch (error) {
@@ -70,9 +66,7 @@ export default function LoginPage() {
     checkForRedirectResult();
   }, [user, loading, router, searchParams]);
   
-
-  // Show a loading state while checking auth status or after initiating redirect
-  if (isSigningIn || loading) {
+  if (isSigningIn || loading || user) {
      return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
