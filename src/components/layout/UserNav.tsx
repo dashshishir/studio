@@ -1,6 +1,6 @@
 'use client';
 
-import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,20 +19,18 @@ import { LogOut, User as UserIcon, LogIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const UserNav = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
 
-  const handleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithRedirect(auth, provider);
-    } catch (error) {
-      console.error("Error signing in with Google: ", error);
-    }
+  const handleSignIn = () => {
+    // Redirect to the login page to handle the sign-in flow
+    router.push('/login');
   };
 
   const handleSignOut = async () => {
     await signOut(auth);
+    // After signing out, you might want to redirect the user to the homepage.
+    router.push('/');
   };
 
   if (loading) {
@@ -76,7 +74,7 @@ const UserNav = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {user.isAdmin && (
+          {isAdmin && (
             <DropdownMenuItem onClick={goToAdmin}>
                 <UserIcon className="mr-2 h-4 w-4" />
                 <span>Admin Dashboard</span>

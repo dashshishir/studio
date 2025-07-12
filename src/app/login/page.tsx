@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -19,34 +19,56 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
   
   const handleSignIn = async () => {
+    setIsSigningIn(true);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google: ", error);
+      setIsSigningIn(false);
     }
   };
 
   useEffect(() => {
-    // This effect handles the user being redirected back from Google
-    // and also handles the case where the user is already logged in.
-    if (loading) return;
-
+    if (loading) {
+      return;
+    }
+    
+    // If user is already logged in, redirect them.
     if (user) {
       const redirectUrl = searchParams.get('redirect') || '/';
-      router.push(redirectUrl);
-    } else {
-      getRedirectResult(auth).catch((error) => {
-        // Handle Errors here.
-        console.error("Error getting redirect result: ", error);
-      });
+      router.replace(redirectUrl);
+      return;
     }
+
+    // If no user, check for redirect result. This will be null if the user just landed on the page.
+    // It will have a value if they are coming back from Google.
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User has been redirected back from Google.
+          // The onAuthStateChanged listener in AuthContext will handle the user state.
+          // We can just redirect them to their destination.
+          const redirectUrl = searchParams.get('redirect') || '/';
+          router.replace(redirectUrl);
+        } else {
+          // User is on the login page, but not coming from a redirect.
+          // No action needed, they can click the sign-in button.
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result: ", error);
+      })
+      .finally(() => {
+          setIsSigningIn(false);
+      });
   }, [user, loading, router, searchParams]);
 
   // Show a loading state while checking auth status or after initiating redirect
-  if (loading) {
+  if (loading || isSigningIn || user) {
      return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -54,8 +76,6 @@ export default function LoginPage() {
     );
   }
 
-  // If user is not logged in, show the sign-in page.
-  // The useEffect above will redirect them if they become logged in.
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-secondary p-4">
       <Card className="w-full max-w-sm">
@@ -64,7 +84,7 @@ export default function LoginPage() {
           <CardDescription>Sign in to track your progress and access all features.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button className="w-full" onClick={handleSignIn}>
+          <Button className="w-full" onClick={handleSignIn} disabled={isSigningIn}>
             <GoogleIcon className="mr-2 h-5 w-5" />
             Sign in with Google
           </Button>
