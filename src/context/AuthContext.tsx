@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +19,6 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
 });
 
-// In a real app, this would involve a backend call or custom claims.
 const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UID || '').split(',');
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -26,17 +26,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+        
         const isUserAdmin = ADMIN_UIDS.includes(firebaseUser.uid);
-        const appUser: User = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          isAdmin: isUserAdmin,
-        };
-        setUser(appUser);
+
+        if (!userSnap.exists()) {
+          // New user, create a document in Firestore
+          const newUser: User = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            isAdmin: isUserAdmin,
+          };
+          await setDoc(userRef, newUser);
+          setUser(newUser);
+        } else {
+          // Existing user, just set the state
+          const existingUser = userSnap.data() as User;
+           // Ensure isAdmin status is up-to-date from env var
+          if (existingUser.isAdmin !== isUserAdmin) {
+            await setDoc(userRef, { isAdmin: isUserAdmin }, { merge: true });
+            existingUser.isAdmin = isUserAdmin;
+          }
+          setUser(existingUser);
+        }
       } else {
         setUser(null);
       }
@@ -59,6 +76,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
+export const useAuthContext = () => {
   return useContext(AuthContext);
 };
