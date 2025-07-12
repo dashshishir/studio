@@ -1,16 +1,19 @@
 import { notFound } from 'next/navigation';
-import { tutorials } from '@/lib/mock-data';
 import { Calendar, User } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import type { Tutorial } from '@/lib/types';
 
-export async function generateStaticParams() {
-  return tutorials.map((tutorial) => ({
-    slug: tutorial.slug,
-  }));
-}
+async function getTutorial(slug: string): Promise<Tutorial | null> {
+  const tutorialsCol = collection(db, 'tutorials');
+  const q = query(tutorialsCol, where('slug', '==', slug), limit(1));
+  const snapshot = await getDocs(q);
 
-async function getTutorial(slug: string) {
-  return tutorials.find((tutorial) => tutorial.slug === slug);
+  if (snapshot.empty) {
+    return null;
+  }
+  const doc = snapshot.docs[0];
+  return { id: doc.id, ...doc.data() } as Tutorial;
 }
 
 export default async function TutorialPage({ params }: { params: { slug: string } }) {

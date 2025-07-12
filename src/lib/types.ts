@@ -13,7 +13,7 @@ export interface Tutorial {
   description: string;
   content: string; // Markdown content
   author: string;
-  publishedDate: string;
+  publishedDate: string; // Should be ISO 8601 string
 }
 
 export interface GlossaryTerm {

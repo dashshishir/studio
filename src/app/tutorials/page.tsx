@@ -1,7 +1,17 @@
 import TutorialCard from '@/components/tutorials/TutorialCard';
-import { tutorials } from '@/lib/mock-data';
+import { db } from '@/lib/firebase';
+import { Tutorial } from '@/lib/types';
+import { collection, getDocs } from 'firebase/firestore';
 
-export default function TutorialsPage() {
+async function getTutorials() {
+  const tutorialsCol = collection(db, 'tutorials');
+  const snapshot = await getDocs(tutorialsCol);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tutorial));
+}
+
+export default async function TutorialsPage() {
+  const tutorials = await getTutorials();
+  
   return (
     <div className="container mx-auto max-w-7xl px-4 py-12">
       <div className="text-center">

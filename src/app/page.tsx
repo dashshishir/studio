@@ -2,10 +2,21 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, BookOpen, GanttChartSquare, ShieldCheck } from 'lucide-react';
-import { featuredTutorials } from '@/lib/mock-data';
 import TutorialCard from '@/components/tutorials/TutorialCard';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { Tutorial } from '@/lib/types';
 
-export default function Home() {
+async function getFeaturedTutorials() {
+  const tutorialsCol = collection(db, 'tutorials');
+  const q = query(tutorialsCol, limit(3));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tutorial));
+}
+
+export default async function Home() {
+  const featuredTutorials = await getFeaturedTutorials();
+  
   const features = [
     {
       icon: <BookOpen className="mb-4 h-12 w-12 text-primary" />,
