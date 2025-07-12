@@ -1,6 +1,6 @@
 'use client';
 
-import { GoogleAuthProvider, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '../ui/skeleton';
-import { LogOut, User as UserIcon, LogIn } from 'lucide-react';
+import { LogOut, User as UserIcon, LogIn, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const UserNav = () => {
@@ -23,13 +23,11 @@ const UserNav = () => {
   const router = useRouter();
 
   const handleSignIn = () => {
-    // Redirect to the login page to handle the sign-in flow
     router.push('/login');
   };
 
   const handleSignOut = async () => {
     await signOut(auth);
-    // After signing out, you might want to redirect the user to the homepage.
     router.push('/');
   };
 
@@ -76,7 +74,7 @@ const UserNav = () => {
         <DropdownMenuGroup>
           {isAdmin && (
             <DropdownMenuItem onClick={goToAdmin}>
-                <UserIcon className="mr-2 h-4 w-4" />
+                <ShieldCheck className="mr-2 h-4 w-4" />
                 <span>Admin Dashboard</span>
             </DropdownMenuItem>
           )}

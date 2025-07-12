@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import Logo from './Logo';
 import UserNav from './UserNav';
+import { Skeleton } from '../ui/skeleton';
 
 const Header = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -22,10 +23,14 @@ const Header = () => {
             <Link href="/glossary" className="text-foreground/60 transition-colors hover:text-foreground/80">
               Glossary
             </Link>
-            {isAdmin && (
-              <Link href="/admin" className="text-foreground/60 transition-colors hover:text-foreground/80">
-                Admin
-              </Link>
+            {loading ? (
+                <Skeleton className="h-4 w-10" />
+            ) : (
+                isAdmin && (
+                <Link href="/admin" className="font-semibold text-primary transition-colors hover:text-primary/80">
+                    Admin
+                </Link>
+                )
             )}
           </nav>
         </div>

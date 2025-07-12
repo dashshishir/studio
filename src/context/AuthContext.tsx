@@ -18,8 +18,8 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
 });
 
-// This is a placeholder for admin check. In a real app, this would involve a backend call or custom claims.
-const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'your-admin-uid-here']; 
+// In a real app, this would involve a backend call or custom claims.
+const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UID || '').split(',');
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -54,13 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {loading ? (
-        <div className="flex h-screen w-full items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </AuthContext.Provider>
   );
 };
