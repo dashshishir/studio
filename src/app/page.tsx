@@ -6,6 +6,7 @@ import TutorialCard from '@/components/tutorials/TutorialCard';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { Tutorial } from '@/lib/types';
+import 'dotenv/config'
 
 async function getFeaturedTutorials() {
   const tutorialsCol = collection(db, 'tutorials');
