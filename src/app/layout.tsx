@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'react-quill/dist/quill.snow.css';
 import { AuthProvider } from '@/context/AuthContext';
 import Header from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';

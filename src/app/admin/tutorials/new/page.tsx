@@ -7,10 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth }.tsx';
 import { Loader2 } from 'lucide-react';
+import React from 'react';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), { ssr: false });
 
 type FormValues = {
   title: string;
@@ -31,7 +36,7 @@ export default function NewTutorialPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = useForm<FormValues>();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch, control } = useForm<FormValues>();
 
   const titleValue = watch('title');
   
@@ -91,8 +96,13 @@ export default function NewTutorialPage() {
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="content">Content (Markdown)</Label>
-                <Textarea id="content" placeholder="Write your tutorial content here using Markdown..." rows={15} {...register('content', { required: 'Content is required' })} />
+                <Label>Content</Label>
+                 <Controller
+                  name="content"
+                  control={control}
+                  rules={{ required: 'Content is required' }}
+                  render={({ field }) => <RichTextEditor {...field} />}
+                />
                 {errors.content && <p className="text-sm text-destructive">{errors.content.message}</p>}
               </div>
               <div className="flex justify-end gap-2">

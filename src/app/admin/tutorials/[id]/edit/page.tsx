@@ -8,10 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Tutorial } from '@/lib/types';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const RichTextEditor = dynamic(() => import('@/components/admin/RichTextEditor'), { ssr: false });
 
 type FormValues = {
   title: string;
@@ -33,7 +37,7 @@ export default function EditTutorialPage({ params }: { params: { id: string } })
   const { toast } = useToast();
   const [tutorial, setTutorial] = useState<Tutorial | null>(null);
   const [loading, setLoading] = useState(true);
-  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch, reset } = useForm<FormValues>();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch, reset, control } = useForm<FormValues>();
   
   const titleValue = watch('title');
 
@@ -135,8 +139,13 @@ export default function EditTutorialPage({ params }: { params: { id: string } })
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="content">Content (Markdown)</Label>
-                <Textarea id="content" rows={15} {...register('content', { required: 'Content is required' })} />
+                <Label>Content</Label>
+                <Controller
+                  name="content"
+                  control={control}
+                  rules={{ required: 'Content is required' }}
+                  render={({ field }) => <RichTextEditor {...field} />}
+                />
                 {errors.content && <p className="text-sm text-destructive">{errors.content.message}</p>}
               </div>
               <div className="flex justify-end gap-2">

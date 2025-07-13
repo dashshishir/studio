@@ -5,6 +5,7 @@ import { Calendar, User, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import type { Tutorial } from '@/lib/types';
+import 'react-quill/dist/quill.snow.css';
 
 export default function TutorialPage({ params }: { params: { slug: string } }) {
   const [tutorial, setTutorial] = useState<Tutorial | null>(null);
@@ -76,8 +77,9 @@ export default function TutorialPage({ params }: { params: { slug: string } }) {
             </div>
         </div>
         
-        {/* In a real app, this would be rendered from Markdown/MDX */}
-        <div dangerouslySetInnerHTML={{ __html: tutorial.content.replace(/\n/g, '<br />') }} />
+        <div className="ql-snow">
+          <div className="ql-editor" dangerouslySetInnerHTML={{ __html: tutorial.content }} />
+        </div>
       </article>
     </div>
   );
