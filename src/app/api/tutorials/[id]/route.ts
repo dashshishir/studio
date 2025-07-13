@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import db from '@/lib/firebase-admin';
 import { Tutorial } from '@/lib/types';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const docRef = doc(db, 'tutorials', params.id);
-    const docSnap = await getDoc(docRef);
+    const docRef = db.collection('tutorials').doc(params.id);
+    const docSnap = await docRef.get();
 
-    if (!docSnap.exists()) {
+    if (!docSnap.exists) {
       return NextResponse.json({ message: 'Tutorial not found' }, { status: 404 });
     }
 
@@ -29,8 +28,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
         }
 
-        const docRef = doc(db, 'tutorials', params.id);
-        await updateDoc(docRef, {
+        const docRef = db.collection('tutorials').doc(params.id);
+        await docRef.update({
             title,
             slug,
             description,
@@ -47,8 +46,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const docRef = doc(db, 'tutorials', params.id);
-    await deleteDoc(docRef);
+    await db.collection('tutorials').doc(params.id).delete();
     return NextResponse.json({ message: 'Tutorial deleted successfully' });
   } catch (error) {
     console.error("Error deleting tutorial: ", error);

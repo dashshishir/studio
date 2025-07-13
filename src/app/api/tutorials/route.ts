@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import db from '@/lib/firebase-admin';
 import { Tutorial } from '@/lib/types';
 
 export async function GET() {
   try {
-    const tutorialsCol = collection(db, 'tutorials');
-    const tutorialSnapshot = await getDocs(tutorialsCol);
+    const tutorialsCol = db.collection('tutorials');
+    const tutorialSnapshot = await tutorialsCol.get();
     const tutorials: Tutorial[] = tutorialSnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -36,7 +35,7 @@ export async function POST(request: Request) {
         publishedDate: new Date().toISOString()
     };
 
-    const docRef = await addDoc(collection(db, 'tutorials'), newTutorial);
+    const docRef = await db.collection('tutorials').add(newTutorial);
     return NextResponse.json({ id: docRef.id, ...newTutorial }, { status: 201 });
   } catch (error) {
     console.error("Error creating tutorial: ", error);
