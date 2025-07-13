@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth }.tsx';
+import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import React from 'react';
 import dynamic from 'next/dynamic';
