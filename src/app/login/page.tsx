@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -19,15 +19,16 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
-  const [isSigningIn, setIsSigningIn] = useState(true); // Start in a loading state
-  
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
   const handleSignIn = async () => {
     setIsSigningIn(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
-      await signInWithRedirect(auth, provider);
-      // After this, the page will reload, and getRedirectResult will be handled in useEffect
+      await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener in AuthProvider will handle the redirect
+      // after the user is set.
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       setIsSigningIn(false);
@@ -36,48 +37,29 @@ export default function LoginPage() {
 
   useEffect(() => {
     const redirectUrl = searchParams.get('redirect') || '/';
-
-    // If auth state is loaded and user exists, redirect them.
     if (!authLoading && user) {
       router.replace(redirectUrl);
-      return;
     }
-
-    // If auth is still loading, we wait.
-    if (authLoading) {
-      return;
-    }
-
-    // Auth is loaded, but there is no user. Let's check for a redirect result.
-    const checkForRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        // If result is not null, a sign-in just occurred.
-        // The onAuthStateChanged listener in useAuth will handle setting the user.
-        // We can keep the loader active while that happens.
-        // If result is null, it means no redirect happened, so we can show the login button.
-        if (!result) {
-          setIsSigningIn(false);
-        }
-      } catch (error) {
-        console.error("Error getting redirect result: ", error);
-        setIsSigningIn(false); // Show login button on error
-      }
-    };
-    
-    checkForRedirectResult();
   }, [user, authLoading, router, searchParams]);
-  
-  // Display a loader while auth state is loading or a sign-in is in progress.
-  if (isSigningIn || authLoading) {
-     return (
+
+  if (authLoading) {
+    return (
+     <div className="flex h-screen items-center justify-center">
+       <Loader2 className="h-12 w-12 animate-spin text-primary" />
+     </div>
+   );
+  }
+
+  // If we are here, auth is loaded, but the user is not signed in.
+  // We don't show a loader if a user is already present, because the useEffect will redirect.
+  if (user) {
+    return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-
-  // If we are not loading and there is no user, show the sign-in page.
+  
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-secondary p-4">
       <Card className="w-full max-w-sm">
