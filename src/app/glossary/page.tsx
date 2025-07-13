@@ -1,12 +1,15 @@
 'use client';
 import { useState } from 'react';
-import { glossaryTerms } from '@/lib/mock-data';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Search } from 'lucide-react';
+import type { GlossaryTerm } from '@/lib/types';
 
 export default function GlossaryPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
+
+  // Data fetching from Firestore will be added here in a future step
 
   const filteredTerms = glossaryTerms.filter(item =>
     item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,7 +51,9 @@ export default function GlossaryPage() {
             </AccordionItem>
           ))
         ) : (
-          <p className="py-8 text-center text-muted-foreground">No terms found matching your search.</p>
+          <p className="py-8 text-center text-muted-foreground">
+            The glossary is currently being updated. Please check back later.
+          </p>
         )}
       </Accordion>
     </div>

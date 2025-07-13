@@ -35,6 +35,7 @@ export default function Home() {
 
   useEffect(() => {
     const getFeaturedTutorials = async () => {
+      setLoading(true);
       try {
         const tutorialsCol = collection(db, 'tutorials');
         const q = query(tutorialsCol, limit(3));

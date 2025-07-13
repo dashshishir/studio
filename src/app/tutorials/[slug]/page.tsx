@@ -15,6 +15,7 @@ export default function TutorialPage({ params }: { params: { slug: string } }) {
     if (!params.slug) return;
 
     const getTutorial = async (slug: string) => {
+      setLoading(true);
       try {
         const tutorialsCol = collection(db, 'tutorials');
         const q = query(tutorialsCol, where('slug', '==', slug), limit(1));

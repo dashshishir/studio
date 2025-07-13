@@ -13,6 +13,7 @@ export default function TutorialsPage() {
 
   useEffect(() => {
     const getTutorials = async () => {
+      setLoading(true);
       try {
         const tutorialsCol = collection(db, 'tutorials');
         const snapshot = await getDocs(tutorialsCol);

@@ -35,7 +35,7 @@ export default function ManageTutorialsPage() {
 
   useEffect(() => {
     fetchTutorials();
-  }, []);
+  }, [toast]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this tutorial?')) return;
