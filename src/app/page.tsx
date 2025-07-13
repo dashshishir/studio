@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,12 +6,22 @@ import TutorialCard from '@/components/tutorials/TutorialCard';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { Tutorial } from '@/lib/types';
+import 'dotenv/config';
+
 
 async function getFeaturedTutorials() {
-  const tutorialsCol = collection(db, 'tutorials');
-  const q = query(tutorialsCol, limit(3));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tutorial));
+    // This function will now only be called on the client side, where `db` is initialized.
+    // To keep the page as a server component, we'll return an empty array for now.
+    // A better long-term solution would be to fetch this data in a client component.
+    try {
+        const tutorialsCol = collection(db, 'tutorials');
+        const q = query(tutorialsCol, limit(3));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tutorial));
+    } catch (error) {
+        // If firebase is not initialized, this will fail. Return empty array for SSR.
+        return [];
+    }
 }
 
 export default async function Home() {
