@@ -3,19 +3,18 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyDNWrSWSB22iQ7UO-My2V_tqWoTMgdldbg",
+  authDomain: "devopshub-c1f99.firebaseapp.com",
+  projectId: "devopshub-c1f99",
+  storageBucket: "devopshub-c1f99.firebasestorage.app",
+  messagingSenderId: "219080269473",
+  appId: "1:219080269473:web:8b662a34d6ab767c6c1ae0",
 };
 
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-// This check prevents Firebase from being initialized on the server side.
 if (typeof window !== 'undefined' && !getApps().length) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
