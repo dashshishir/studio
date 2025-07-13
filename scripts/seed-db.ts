@@ -1,7 +1,23 @@
 
-import 'dotenv/config';
-import db from '../src/lib/firebase-admin';
-import { CollectionReference } from 'firebase-admin/firestore';
+require('dotenv/config');
+const admin = require('firebase-admin');
+const { getFirestore, CollectionReference } = require('firebase-admin/firestore');
+
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  } catch (error) {
+    console.error('Firebase admin initialization error', error);
+  }
+}
+
+const db = getFirestore();
 
 const tutorials = [
   {
@@ -105,7 +121,7 @@ async function seedCollection(collection: CollectionReference, data: any[]) {
 
     console.log(`Seeding collection: ${collection.id}...`);
     const batch = db.batch();
-    data.forEach(item => {
+    data.forEach((item: any) => {
         const docRef = collection.doc(); // Automatically generate a new document ID
         batch.set(docRef, item);
     });
