@@ -1,7 +1,8 @@
 
 require('dotenv/config');
 const admin = require('firebase-admin');
-const { getFirestore, CollectionReference } = require('firebase-admin/firestore');
+const { getFirestore } = require('firebase-admin/firestore');
+import type { CollectionReference } from 'firebase-admin/firestore';
 
 if (!admin.apps.length) {
   try {
