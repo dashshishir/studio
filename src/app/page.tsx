@@ -6,7 +6,6 @@ import TutorialCard from '@/components/tutorials/TutorialCard';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { Tutorial } from '@/lib/types';
-import 'dotenv/config';
 
 
 async function getFeaturedTutorials() {
@@ -14,6 +13,7 @@ async function getFeaturedTutorials() {
     // To keep the page as a server component, we'll return an empty array for now.
     // A better long-term solution would be to fetch this data in a client component.
     try {
+        if (!db) return [];
         const tutorialsCol = collection(db, 'tutorials');
         const q = query(tutorialsCol, limit(3));
         const snapshot = await getDocs(q);
