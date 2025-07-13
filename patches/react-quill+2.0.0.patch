@@ -1,167 +1,210 @@
 diff --git a/node_modules/react-quill/lib/index.js b/node_modules/react-quill/lib/index.js
-index 27373f3..43b47b0 100644
+index 233e755..1440536 100644
 --- a/node_modules/react-quill/lib/index.js
 +++ b/node_modules/react-quill/lib/index.js
-@@ -1,7 +1,7 @@
- 'use strict';
+@@ -7,7 +7,7 @@
+ 	'use strict';
  
- var React = require('react');
--var ReactDOM = require('react-dom');
-+var ReactDOM = require('react-dom/client');
- var Quill = require('quill');
- var PropTypes = require('prop-types');
+ 	var _react = require('react');
+-	var _react2 = _interopRequireDefault(_react);
++	var _reactDom = require('react-dom');
  
-@@ -370,7 +370,12 @@
+ 	var _quill = require('quill');
+ 	var _quill2 = _interopRequireDefault(_quill);
+@@ -107,11 +107,11 @@
+ 
+ 	/*
+ 	We consider the component to be controlled if `value` is provided.
+-	This is a bit simplistic, but should be alright given that:
+-	- `defaultValue` is provided for uncontrolled components
+-	- `value` is required for controlled components
++	This is a bit simplistic, but should be alright because we are breaking
++	this subtlety of controlled components voices in our wrapper.
+ 	*/
+-	value: _react.PropTypes.string,
++	value: _react.PropTypes.oneOfType([_react.PropTypes.string, _react.PropTypes.shape({
++		ops: _react.PropTypes.array })]),
+ 
+ 	/*
+ 	This is a simpler way to register unofficial modules.
+@@ -216,7 +216,7 @@
  	},
  
  	getEditor: function getEditor() {
--		return this.quill;
-+        if (!this.quill) {
-+            const editor = ReactDOM.createRoot(this.editorRef.current);
-+            this.quill = new Quill(editor, this.getEditingArea());
-+        }
-+
-+        return this.quill;
+-		return this.state.editor;
++		return this.editor;
  	},
  
  	getEditingArea: function getEditingArea() {
-@@ -378,7 +383,7 @@
+@@ -232,7 +232,7 @@
+ 
+ 	createEditor: function createEditor(element, config) {
+ 		var editor = new _quill2['default'](element, config);
+-		this.setState({ editor: editor });
++		this.editor = editor;
+ 		return editor;
  	},
  
- 	getSelection: function getSelection() {
--		return this.quill.getSelection();
-+		return this.getEditor().getSelection();
+@@ -241,13 +241,14 @@
+ 			this.props.onChange(value, delta, source, editor);
+ 		}
  	},
- 
- 	getBounds: function getBounds(index, length) {
-diff --git a/node_modules/react-quill/lib/component.js b/node_modules/react-quill/lib/component.js
-index 475853c..858dd53 100644
---- a/node_modules/react-quill/lib/component.js
-+++ b/node_modules/react-quill/lib/component.js
-@@ -1,6 +1,6 @@
- 'use strict';
- 
--var DOM = require('react-dom');
-+var ReactDOM = require('react-dom/client');
- var Quill = require('quill');
- var PropTypes = require('prop-types');
- var QuillMixin = require('./mixin');
-@@ -8,7 +8,7 @@
- module.exports = React.createClass({
- 
- 	displayName: 'Quill',
--	
+-	onEditorChangeText: function onEditorChangeText(value, delta, source, editor) {
 +
- 	mixins: [ QuillMixin ],
- 
- 	propTypes: {
-@@ -32,7 +32,7 @@
++	onEditorChangeText: function onEditorChangeText(text, delta, source, editor) {
+ 		if (this.isControlled()) {
+-			this.onEditorChange(this.getEditor().getHTML(), delta, source, editor);
++			this.onEditorChange(text, delta, source, editor);
+ 		}
  	},
  
- 	render: function() {
--		return React.DOM.div(
-+		return React.createElement('div',
- 			{
- 				key: this.state.generation,
- 				style: this.props.style,
-@@ -40,14 +40,14 @@
- 				onKeyPress: this.props.onKeyPress,
- 				onKeyDown: this.props.onKeyDown,
- 				onKeyUp: this.props.onKeyUp
--			},
--			React.DOM.div({
-+			}, React.createElement('div', {
- 				key: 0,
- 				ref: 'editor',
- 				className: 'quill-contents',
- 				dangerouslySetInnerHTML: { __html:this.state.value }
--			})
-+			}, null)
- 		);
--	}
+-	/*
++	/* 
+ 	Renders the editor with the given value. This is used when the component
+ 	is controlled.
+ 	*/
+@@ -262,23 +263,30 @@
+ 		var editor = this.getEditor();
+ 		if (editor) {
+ 			if (this.isControlled()) {
+-				this.setEditorHTML(editor, this.props.value);
++				var new_value = this.isDelta(this.props.value) ? this.props.value : editor.clipboard.convert(this.props.value);
++				this.setEditorContents(editor, new_value);
+ 			} else {
+-				this.setEditorHTML(editor, this.props.defaultValue);
++				this.setEditorContents(editor, editor.clipboard.convert(this.props.defaultValue));
+ 			}
+ 		}
+ 	},
+ 
+ 	componentDidMount: function componentDidMount() {
+-		var editor = this.createEditor(this.getEditingArea(), {
++		this.editor = this.createEditor(this.getEditingArea(), {
+ 			theme: this.props.theme,
+ 			modules: this.props.modules,
+ 			formats: this.props.formats,
+ 			readOnly: this.props.readOnly
+-		});
++		}); 
++		// We can't use the delta from the event, as it is only the change, not
++		// the new state. Thus, we have to fetch it manually.
+ 		this.getEditor().on('text-change', this.onEditorChangeText);
++		this.getEditor().on('selection-change', this.onEditorChangeSelection);
++
+ 		this.componentDidUpdate();
+ 	},
+ 
++	isDelta: function isDelta(value) {
++		return value && value.ops;
 +	},
- 
- });
 +
+ 	/*
+ 	Stop watching for changes.
+ 	*/
+@@ -291,12 +299,15 @@
+ 
+ 	render: function render() {
+ 		var _this = this;
+-
++		
+ 		return _react2['default'].createElement(
+ 			'div',
+-			{ id: this.props.id,
+-				style: this.props.style,
+-				className: 'quill ' + this.props.className },
+-			_react2['default'].createElement('div', {
+-				ref: function (div) {
++			{
++			id: this.props.id,
++			style: this.props.style,
++			className: "quill " + this.props.className },
++			_react2['default'].createElement('div', { 
++				ref: function(div) {
+ 					_this.editingArea = div;
+ 				},
+ 				style: this.props.editorStyle
 diff --git a/node_modules/react-quill/lib/mixin.js b/node_modules/react-quill/lib/mixin.js
-index 45a4ec8..48227b2 100644
+index f32b132..c50b712 100644
 --- a/node_modules/react-quill/lib/mixin.js
 +++ b/node_modules/react-quill/lib/mixin.js
-@@ -1,6 +1,6 @@
+@@ -1,5 +1,6 @@
  'use strict';
  
--var ReactDOM = require('react-dom');
-+var ReactDOM = require('react-dom/client');
++var ReactDOM = require('react-dom');
  var Quill = require('quill');
- var isEqual = require('lodash/isEqual');
- var isObject = require('lodash/isObject');
-@@ -11,7 +11,7 @@
  
- 	/**
- 	Creates an editor on the given element. The editor will
--	be passed the configuration, have its events bound,
-+	be passed the configuration, have its events bound.
- 	*/
- 	createEditor: function(element, config) {
- 		var editor = new Quill(element, config);
-@@ -19,7 +19,7 @@
+ /*
+@@ -35,22 +36,22 @@
  	},
  
- 	hookEditor: function(editor) {
--		// Expose the editor on the component, as a ref, so that it
-+		// Expose the editor on the component, as a ref, so that it can
- 		// can be accessed outside the component via the ref property.
- 		this.editor = editor;
- 	},
-@@ -117,7 +117,7 @@
- 	},
- 
- 	getEditor: function() {
--		return this.editor;
-+		return this.editor
- 	},
- 
- 	/**
-@@ -125,7 +125,7 @@
- 	the DOM, ready to be used.
- 	*/
  	setEditorContents: function(editor, value) {
--		var sel = this.getEditorSelection();
-+		var sel = editor.getSelection();
- 		if (typeof value === 'string') {
- 			editor.setHTML(value);
- 		} else {
-@@ -169,7 +169,7 @@
+-		var sel = editor.getSelection();
++		var sel = this.getEditorSelection();
+ 		editor.setContents(value);
+-		if (sel) this.setEditorSelection(editor, sel);
++		if (sel) this.setEditorSelection(sel);
  	},
  
- 	getEditingArea: function(){
--		return ReactDOM.findDOMNode(this.refs.editor);
-+		return this.refs.editor;
+ 	setEditorHTML: function(editor, value) {
+-		var sel = editor.getSelection();
++		var sel = this.getEditorSelection();
+ 		editor.pasteHTML(value);
+-		if (sel) this.setEditorSelection(editor, sel);
++		if (sel) this.setEditorSelection(sel);
  	},
  
- 	getEditorSelection: function() {
-@@ -201,11 +201,6 @@
- 			this.setEditorContents(this.editor, this.state.value);
+ 	setEditorSelection: function(editor, range) {
+ 		if (range) {
+-			// To restore selection range must be set after the quill editor has had time to register the pasted content
+-			setTimeout(function() { editor.setSelection(range.start, range.end) }, 0);
++			// To restore selection range must be set after the quill editor has had time to register the pasted content.
++			// See: https://github.com/zenoamaro/react-quill/issues/32
++			setTimeout(function() { editor.setSelection(range.start, range.end); }, 0);
  		}
  	},
--
--	componentWillReceiveProps: function(nextProps) {
--		// If the component is unmounted and mounted too quickly, componentUnmount may not be called,
--		// so we need to check if the editor is mounted.
--	},
- 	
- 	/**
- 	We update the editor with the new props.
-@@ -231,10 +226,10 @@
- 		}
  
- 		if (nextProps.readOnly !== this.props.readOnly) {
--			this.editor.enable(!nextProps.readOnly);
-+			this.editor.enable(nextProps.readOnly);
- 		}
+@@ -58,9 +59,10 @@
+ 	 * a string of HTML, a Quill Delta instance, or a plain object representing a
+ 	 * Delta instance.
+ 	 */
+-	isDelta: function(value) {
++	isDelta: function isDelta(value) {
+ 		return value && value.ops;
  	},
--
-+	
- 	shouldComponentUpdate: function(nextProps, nextState) {
- 		// The editor won't be re-rendered if the user is typing,
- 		// unless the editor needs to be re-created.
+-	
++
++	/* Component-level methods */
+ 
+ };
+diff --git a/node_modules/react-quill/lib/toolbar.js b/node_modules/react-quill/lib/toolbar.js
+index b56d56d..3a970e7 100644
+--- a/node_modules/react-quill/lib/toolbar.js
++++ b/node_modules/react-quill/lib/toolbar.js
+@@ -1,7 +1,7 @@
+ 'use strict';
+ 
+-var React = require('react');
+-var ReactDOM = require('react-dom');
++var _react = require('react');
++var _reactDom = require('react-dom');
+ 
+ /*
+ A flexible toolbar containing a set of items. Each item is represented by a
+@@ -91,7 +91,7 @@
+ 	},
+ 
+ 	renderItem: function renderItem(item, key) {
+-		return React.createElement(
++		return _react.createElement(
+ 			'span',
+ 			{
+ 				key: key,
+@@ -107,7 +107,7 @@
+ 	},
+ 
+ 	render: function render() {
+-		return React.createElement(
++		return _react.createElement(
+ 			'div',
+ 			{
+ 				className: this.props.className,

@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import ReactQuill from 'react-quill';
+import type ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 interface RichTextEditorProps {
