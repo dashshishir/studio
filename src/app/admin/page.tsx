@@ -3,7 +3,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, GanttChartSquare, GraduationCap, Users } from 'lucide-react';
+import { BookOpen, GraduationCap, Users } from 'lucide-react';
 import Link from 'next/link';
 
 // Mock data for admin dashboard
