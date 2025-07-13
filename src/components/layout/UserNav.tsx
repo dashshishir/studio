@@ -17,10 +17,17 @@ import {
 import { Skeleton } from '../ui/skeleton';
 import { LogOut, User as UserIcon, LogIn, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const UserNav = () => {
   const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      console.log('Current User UID:', user.uid);
+    }
+  }, [user]);
 
   const handleSignIn = () => {
     router.push('/login');
