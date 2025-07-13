@@ -3,9 +3,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { User } from '@/lib/types';
+import { checkIsAdmin } from '@/app/actions/isAdmin';
 
 interface AuthContextType {
   user: User | null;
@@ -19,8 +20,6 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
 });
 
-const ADMIN_UIDS = (process.env.NEXT_PUBLIC_ADMIN_UID || '').split(',');
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,11 +29,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
         const userSnap = await getDoc(userRef);
-        
-        const isUserAdmin = ADMIN_UIDS.includes(firebaseUser.uid);
+
+        const isUserAdmin = await checkIsAdmin(firebaseUser.uid);
 
         if (!userSnap.exists()) {
-          // New user, create a document in Firestore
           const newUser: User = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
@@ -45,11 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await setDoc(userRef, newUser);
           setUser(newUser);
         } else {
-          // Existing user, just set the state
           const existingUser = userSnap.data() as User;
-           // Ensure isAdmin status is up-to-date from env var
           if (existingUser.isAdmin !== isUserAdmin) {
-            await setDoc(userRef, { isAdmin: isUserAdmin }, { merge: true });
+            await updateDoc(userRef, { isAdmin: isUserAdmin });
             existingUser.isAdmin = isUserAdmin;
           }
           setUser(existingUser);
