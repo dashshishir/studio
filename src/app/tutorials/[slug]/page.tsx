@@ -1,23 +1,48 @@
+'use client';
+import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import type { Tutorial } from '@/lib/types';
 
-async function getTutorial(slug: string): Promise<Tutorial | null> {
-  const tutorialsCol = collection(db, 'tutorials');
-  const q = query(tutorialsCol, where('slug', '==', slug), limit(1));
-  const snapshot = await getDocs(q);
+export default function TutorialPage({ params }: { params: { slug: string } }) {
+  const [tutorial, setTutorial] = useState<Tutorial | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (snapshot.empty) {
-    return null;
+  useEffect(() => {
+    if (!params.slug) return;
+
+    const getTutorial = async (slug: string) => {
+      try {
+        const tutorialsCol = collection(db, 'tutorials');
+        const q = query(tutorialsCol, where('slug', '==', slug), limit(1));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          setTutorial(null);
+        } else {
+          const doc = snapshot.docs[0];
+          setTutorial({ id: doc.id, ...doc.data() } as Tutorial);
+        }
+      } catch (error) {
+        console.error("Error fetching tutorial:", error);
+        setTutorial(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getTutorial(params.slug);
+  }, [params.slug]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as Tutorial;
-}
-
-export default async function TutorialPage({ params }: { params: { slug: string } }) {
-  const tutorial = await getTutorial(params.slug);
 
   if (!tutorial) {
     notFound();

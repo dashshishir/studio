@@ -1,31 +1,19 @@
+'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, BookOpen, GanttChartSquare, ShieldCheck } from 'lucide-react';
 import TutorialCard from '@/components/tutorials/TutorialCard';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { Tutorial } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
-async function getFeaturedTutorials() {
-    // This function will now only be called on the client side, where `db` is initialized.
-    // To keep the page as a server component, we'll return an empty array for now.
-    // A better long-term solution would be to fetch this data in a client component.
-    try {
-        if (!db) return [];
-        const tutorialsCol = collection(db, 'tutorials');
-        const q = query(tutorialsCol, limit(3));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tutorial));
-    } catch (error) {
-        // If firebase is not initialized, this will fail. Return empty array for SSR.
-        return [];
-    }
-}
-
-export default async function Home() {
-  const featuredTutorials = await getFeaturedTutorials();
+export default function Home() {
+  const [featuredTutorials, setFeaturedTutorials] = useState<Tutorial[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const features = [
     {
@@ -44,6 +32,25 @@ export default async function Home() {
       description: 'Quickly look up complex terms and concepts with our integrated DevOps glossary.',
     },
   ];
+
+  useEffect(() => {
+    const getFeaturedTutorials = async () => {
+      try {
+        const tutorialsCol = collection(db, 'tutorials');
+        const q = query(tutorialsCol, limit(3));
+        const snapshot = await getDocs(q);
+        const tutorials = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tutorial));
+        setFeaturedTutorials(tutorials);
+      } catch (error) {
+        console.error("Error fetching featured tutorials: ", error);
+        // Handle error appropriately
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getFeaturedTutorials();
+  }, []);
 
   return (
     <div className="flex flex-col items-center">
@@ -101,9 +108,24 @@ export default async function Home() {
             Get a taste of what you can learn. Dive into one of our popular tutorials.
           </p>
           <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {featuredTutorials.map((tutorial) => (
-              <TutorialCard key={tutorial.id} tutorial={tutorial} />
-            ))}
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full mt-2" />
+                  </CardHeader>
+                  <CardContent className="flex-grow"></CardContent>
+                   <CardFooter>
+                     <Skeleton className="h-6 w-24" />
+                   </CardFooter>
+                </Card>
+              ))
+            ) : (
+              featuredTutorials.map((tutorial) => (
+                <TutorialCard key={tutorial.id} tutorial={tutorial} />
+              ))
+            )}
           </div>
           <div className="mt-12 text-center">
             <Button asChild variant="link" className="text-lg">
